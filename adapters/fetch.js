@@ -12,16 +12,17 @@ const customError = (data) => {
 // with a Boolean value indicating whether or not they
 // should be required.
 const customParams = {
-    eventID: ["event", "e"],
+    event: ["event", "e"],
     endpoint: false,
 }
 
 const createRequest = (input, callback) => {
     // The Validator helps you validate the Chainlink request data
-    const validator = new Validator(callback, input, customParams)
+    const validator = new Validator(input, customParams)
     const jobRunID = validator.validated.id
     const endpoint = validator.validated.data.endpoint || "events"
-    const eventID = validator.validated.data.eventID
+    console.log(validator)
+    const eventID = validator.validated.data.event
     const apiKey = "TODO"
     const url = `https://sportscore1.p.rapidapi.com/${endpoint}/${eventID}`
 
@@ -30,6 +31,7 @@ const createRequest = (input, callback) => {
     // The default is GET requests
     // method = 'get'
     // headers = 'headers.....'
+    console.log("URL ", url)
     const config = {
         url,
         headers: {
@@ -45,11 +47,7 @@ const createRequest = (input, callback) => {
             // It's common practice to store the desired value at the top-level
             // result key. This allows different adapters to be compatible with
             // one another.
-            response.data.result = Requester.validateResultNumber(response.data, [
-                "data",
-                "0",
-                "status",
-            ])
+            response.data.result = response.data.data.status
             callback(response.status, Requester.success(jobRunID, response))
         })
         .catch((error) => {

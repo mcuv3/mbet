@@ -17,6 +17,8 @@ services:
     image: smartcontract/chainlink:1.8.1-root
     ports:
       - 6688:6688
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on:
       - db
     volumes:
