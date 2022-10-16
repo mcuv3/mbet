@@ -1,0 +1,29 @@
+# THIS IS EXAMPLE CODE THAT USES HARDCODED VALUES FOR CLARITY.
+# THIS IS EXAMPLE CODE THAT USES UN-AUDITED CODE.
+# DO NOT USE THIS CODE IN PRODUCTION.
+
+type = "directrequest"
+schemaVersion = 1
+name = "Score"
+contractAddress = "0x699d632F802ea13A4F3941E8e6C81C8bD0e40d25"
+maxTaskDuration = "0s"
+minIncomingConfirmations = 0
+observationSource = """
+    decode_log   [type="ethabidecodelog"
+                  abi="OracleRequest(bytes32 indexed specId, address requester, bytes32 requestId, uint256 payment, address callbackAddr, bytes4 callbackFunctionId, uint256 cancelExpiration, uint256 dataVersion, bytes data)"
+                  data="$(jobRun.logData)"
+                  topics="$(jobRun.logTopics)"]
+
+    decode_cbor  [type="cborparse" data="$(decode_log.data)"]
+    fetch [type="bridge" name="score" requestData="{ \\"data\\": { \\"event\\": \\"1580080\\" }}" allowUnrestrictedNetworkAccess="true"]
+    parse       [type="jsonparse" data="$(fetch)" path="data,result"]
+    encode_data  [type="ethabiencode" abi="(bytes32 requestId, string value)" data="{ \\"requestId\\": $(decode_log.requestId), \\"value\\": $(parse) }"]
+    encode_tx    [type="ethabiencode"
+                  abi="fulfillOracleRequest2(bytes32 requestId, uint256 payment, address callbackAddress, bytes4 callbackFunctionId, uint256 expiration, bytes calldata data)"
+                  data="{\\"requestId\\": $(decode_log.requestId), \\"payment\\":   $(decode_log.payment), \\"callbackAddress\\": $(decode_log.callbackAddr), \\"callbackFunctionId\\": $(decode_log.callbackFunctionId), \\"expiration\\": $(decode_log.cancelExpiration), \\"data\\": $(encode_data)}"
+                  ]
+    submit_tx    [type="ethtx" to="0x699d632F802ea13A4F3941E8e6C81C8bD0e40d25" data="$(encode_tx)"]
+
+    decode_log -> decode_cbor -> fetch -> parse -> encode_data -> encode_tx -> submit_tx
+"""
+
